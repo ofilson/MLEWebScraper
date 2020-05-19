@@ -13,5 +13,9 @@ driver.get("https://mlesports.gg/matches/") # URL to scrape from: https://mlespo
 content = driver.page_source
 soup = BeautifulSoup(content,features="lxml")
 
-a = soup.find('div', attrs={'id':'elementor-tab-title-2413'}) # Season 8
-print(a.text)
+season = soup.find('div', attrs={'id':'elementor-tab-title-2413'}) # Season 8
+
+b = soup.find('div', attrs={'aria-labelledby':'elementor-tab-title-2413'}) #Season 8
+
+c = b.findNext('div', attrs={'class':'sp-template-event-list'})
+print(c.findNext('h4').text)
