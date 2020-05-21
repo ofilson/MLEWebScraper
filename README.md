@@ -10,7 +10,7 @@ Uses Python to get the match data from every season on mlesports.gg and make .cs
  
 INCLUDED FILES:
 
- * 
+ * Scrape.py
  
  COMPILING AND RUNNING:
 
