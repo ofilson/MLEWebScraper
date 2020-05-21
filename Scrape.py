@@ -25,16 +25,16 @@ testButton = driver.find_element_by_xpath('/html/body/div[2]/header/div/div/div/
 #actionChains.perform()
 
 #Comment one of these out
-seasonIDs = ['2413']                 #For testing using just one season (season 8)
-tableNumber = 12
-#seasonIDs = ['2413','2412','2411']  #For testing using all three seasons (8-10)
-#tableNumber = '0'
+#seasonIDs = ['2413']                 #For testing using just one season (season 8)
+#tableNumber = 12
+seasonIDs = ['2411','2412','2413']  #For testing using all three seasons (10-8)
+tableNumber = 0
 
 for a in seasonIDs:
 
     season = driver.find_element_by_id('elementor-tab-title-'+a) # Season number (ie Season 8)
-    seasonSoup = makeSoup(season).text #Season 8
-#   print(seasonSoup)
+    seasonSoup = makeSoup(season)
+    print('Processing ' + seasonSoup.text)
 
     seasonData = driver.find_element_by_id('elementor-tab-content-'+a)
     seasonDataSoup = makeSoup(seasonData)
@@ -53,23 +53,25 @@ for a in seasonIDs:
         leagueName = leagueData.find_element_by_tag_name('h4')
         leagueNameSoup = makeSoup(leagueName)
         league = leagueNameSoup.text[0:leagueNameSoup.text.index('League')+6]
-        print(league)
+        print('Processing ' + league)
         urls = []
 
         buttonExists = True
         
         while(buttonExists):
             actionChains = ActionChains(driver) # Must be re-instantiated every iteration or else element becomes stale
+            if(tableNumber == 8):
+                tableNumber += 4 #Account for weird playoff data in season 8
             tableNum = tableNumber.__str__()
             nextButton = leagueData.find_element_by_xpath('//*[@id="DataTables_Table_' + tableNum + '_next"]')
             
             nextButtonSoup = makeSoup(nextButton)
-            print(nextButtonSoup)
+#            print(nextButtonSoup)
             try: #Tries to find a disabled pagination button, throws a NoSuchElement if not first or last page
                 disabledSoup = makeSoup(leagueData.find_element_by_class_name('disabled')) 
             except:
                 disabledSoup = None
-            print(disabledSoup)
+#            print(disabledSoup)
             if disabledSoup == nextButtonSoup:  #if statement that figures out if the next button exists: True if it does, False if it doesn't
                 buttonExists = False
 
@@ -89,5 +91,9 @@ for a in seasonIDs:
                 actionChains.perform() #Go to next page
         tableNumber = tableNumber + 1
         leagues.append(urls)
+        urls = []
+        print(league + ' has been processed')
+    print(seasonSoup.text + ' has been processed')
+    #go into seperate function passing in leagues that 
 
-        #go into seperate function passing in leagues that 
+print('Done!')
