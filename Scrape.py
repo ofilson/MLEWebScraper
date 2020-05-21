@@ -3,6 +3,7 @@
 
 #imports
 from selenium import webdriver
+from selenium.webdriver import ActionChains
 from bs4 import BeautifulSoup
 import pandas as pd 
 
@@ -17,29 +18,76 @@ def makeSoup(seleniumObject):
 driver = webdriver.Chrome("C:/Users/Oscar Filson/eclipse-workspace/MLEWebScraper/MLEWebScraper/chromedriver")
 driver.get("https://mlesports.gg/matches/") # scrapes from this URL
 
+#This works
+testButton = driver.find_element_by_xpath('/html/body/div[2]/header/div/div/div/div[2]/nav/div/ul/li[5]/a')
+#actionChains.move_to_element(testButton)
+#actionChains.click()
+#actionChains.perform()
+
 #Comment one of these out
-seasonIDs = ['2413']                #For testing using just one season (season 8)
+seasonIDs = ['2413']                 #For testing using just one season (season 8)
+tableNumber = 12
 #seasonIDs = ['2413','2412','2411']  #For testing using all three seasons (8-10)
+#tableNumber = '0'
 
 for a in seasonIDs:
+
     season = driver.find_element_by_id('elementor-tab-title-'+a) # Season number (ie Season 8)
     seasonSoup = makeSoup(season).text #Season 8
 #   print(seasonSoup)
-#   seasonData = soup.find('div', attrs={'aria-labelledby':'elementor-tab-title-'+a}) 
+
     seasonData = driver.find_element_by_id('elementor-tab-content-'+a)
     seasonDataSoup = makeSoup(seasonData)
-    print(seasonDataSoup)
-    break
-    for leagueData in seasonData.findAll('div', attrs={'class':'sp-template-event-list'}):
-        League = leagueData.findNext('h4').text
-        print(League)
-        
-        for row in leagueData.findAll('tr'):
-            result = row.find('td', attrs={'class':'data-time ok'})
-            print(result)
+#    print(seasonDataSoup)
 
-        print(leagueData)
-        nextButton = leagueData.findNext('a', attrs={'class':'next'})
-        print(nextButton)
+    leagues = []
+
+    tabNum = a[3]
+    correctTab = driver.find_element_by_xpath('/html/body/div[2]/div/div/div[1]/main/article/div/div/div/div/section/div/div/div/div/div/div/div/div/div[1]/div['+ tabNum + ']/a')
+    actionChains = ActionChains(driver)
+    actionChains.move_to_element(correctTab)
+    actionChains.click().perform()
+    
+    for leagueData in seasonData.find_elements_by_class_name('sp-template-event-list'):
+
+        leagueName = leagueData.find_element_by_tag_name('h4')
+        leagueNameSoup = makeSoup(leagueName)
+        league = leagueNameSoup.text[0:leagueNameSoup.text.index('League')+6]
+        print(league)
+        urls = []
+
+        buttonExists = True
         
-        #I need to figure out a way to click the next button on selenium I think.
+        while(buttonExists):
+            actionChains = ActionChains(driver) # Must be re-instantiated every iteration or else element becomes stale
+            tableNum = tableNumber.__str__()
+            nextButton = leagueData.find_element_by_xpath('//*[@id="DataTables_Table_' + tableNum + '_next"]')
+            
+            nextButtonSoup = makeSoup(nextButton)
+            print(nextButtonSoup)
+            try: #Tries to find a disabled pagination button, throws a NoSuchElement if not first or last page
+                disabledSoup = makeSoup(leagueData.find_element_by_class_name('disabled')) 
+            except:
+                disabledSoup = None
+            print(disabledSoup)
+            if disabledSoup == nextButtonSoup:  #if statement that figures out if the next button exists: True if it does, False if it doesn't
+                buttonExists = False
+
+            actionChains.move_to_element(nextButton)
+            actionChains.click()
+
+            for row in leagueData.find_elements_by_class_name('sp-row'):
+
+                resultData = row.find_element_by_class_name('data-time')
+                resultDataSoup = makeSoup(resultData)
+#               print(resultDataSoup)
+
+                link = resultDataSoup.find('a').get('href')
+#                print(link)
+                urls.append(link)
+            if buttonExists:         
+                actionChains.perform() #Go to next page
+        tableNumber = tableNumber + 1
+        leagues.append(urls)
+
+        #go into seperate function passing in leagues that 
