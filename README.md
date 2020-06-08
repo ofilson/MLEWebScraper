@@ -1,6 +1,6 @@
 ****************
 * MLEWebScraper
-* 05/18/2020
+* 05/27/2020
 * Oscar Filson
 **************** 
 
@@ -11,6 +11,7 @@ Uses Python to get the match data from every season on mlesports.gg and make .cs
 INCLUDED FILES:
 
  * Scrape.py
+ * ScrapeMatch.py
  
  COMPILING AND RUNNING:
 
