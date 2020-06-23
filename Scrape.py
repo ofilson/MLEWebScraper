@@ -96,10 +96,10 @@ driver = webdriver.Chrome("C:/Users/Oscar Filson/eclipse-workspace/MLEWebScraper
 driver.get("https://mlesports.gg/matches/") # scrapes from this URL
 
 #Comment one of these out
-#seasonIDs = ['2413']                 #For testing using just one season (season 8)
-#tableNumber = 12
-seasonIDs = ['2411','2412','2413']  #For using all three seasons (10-8)
-tableNumber = 0
+seasonIDs = ['2413']                 #For testing using just one season (season 9)
+tableNumber = 15                     #for testing starting a specific league 
+#seasonIDs = ['2411','2412','2413']  #For using all three seasons (10-8)
+#tableNumber = 0
 
 for a in seasonIDs:
 
@@ -110,57 +110,56 @@ for a in seasonIDs:
     seasonData = driver.find_element_by_id('elementor-tab-content-'+a)
     seasonDataSoup = makeSoup(seasonData)
 
-#   leagues = []
-
     tabNum = a[3]
     correctTab = driver.find_element_by_xpath('/html/body/div[2]/div/div/div[1]/main/article/div/div/div/div/section/div/div/div/div/div/div/div/div/div[1]/div['+ tabNum + ']/a')
     actionChains = ActionChains(driver)
     actionChains.move_to_element(correctTab)
     actionChains.click().perform()
     
-    for leagueData in seasonData.find_elements_by_class_name('sp-template-event-list'):
+    #for leagueData in seasonData.find_elements_by_class_name('sp-template-event-list'):
+    leagueData = seasonData.find_elements_by_class_name('sp-template-event-list')[3]
 
-        leagueName = leagueData.find_element_by_tag_name('h4')
-        leagueNameSoup = makeSoup(leagueName)
-        league = leagueNameSoup.text[0:leagueNameSoup.text.index('League')+6]
-        print('Processing ' + league)
-        urls = []
+    leagueName = leagueData.find_element_by_tag_name('h4')
+    leagueNameSoup = makeSoup(leagueName)
+    league = leagueNameSoup.text[0:leagueNameSoup.text.index('League')+6]
+    print('Processing ' + league)
+    urls = []
 
-        buttonExists = True
+    buttonExists = True
+    
+    while(buttonExists):
+        actionChains = ActionChains(driver) # Must be re-instantiated every iteration or else element becomes stale
+        if(tableNumber == 8):
+            tableNumber += 4 #Account for weird playoff data in season 8
+        tableNum = tableNumber.__str__()
+        nextButton = leagueData.find_element_by_xpath('//*[@id="DataTables_Table_' + tableNum + '_next"]')
         
-        while(buttonExists):
-            actionChains = ActionChains(driver) # Must be re-instantiated every iteration or else element becomes stale
-            if(tableNumber == 8):
-                tableNumber += 4 #Account for weird playoff data in season 8
-            tableNum = tableNumber.__str__()
-            nextButton = leagueData.find_element_by_xpath('//*[@id="DataTables_Table_' + tableNum + '_next"]')
-            
-            nextButtonSoup = makeSoup(nextButton)
-            try: #Tries to find a disabled pagination button, throws a NoSuchElement if not first or last page
-                disabledSoup = makeSoup(leagueData.find_element_by_class_name('disabled')) 
-            except:
-                disabledSoup = None
-            if disabledSoup == nextButtonSoup:  #if statement that figures out if the next button exists: True if it does, False if it doesn't
-                buttonExists = False
+        nextButtonSoup = makeSoup(nextButton)
+        try: #Tries to find a disabled pagination button, throws a NoSuchElement if not first or last page
+            disabledSoup = makeSoup(leagueData.find_element_by_class_name('disabled')) 
+        except:
+            disabledSoup = None
+        if disabledSoup == nextButtonSoup:  #if statement that figures out if the next button exists: True if it does, False if it doesn't
+            buttonExists = False
 
-            actionChains.move_to_element(nextButton)
-            actionChains.click()
-            for row in leagueData.find_elements_by_class_name('sp-row'):
-                resultData = row.find_element_by_class_name('data-time')
-                resultDataSoup = makeSoup(resultData)
+        actionChains.move_to_element(nextButton)
+        actionChains.click()
+        for row in leagueData.find_elements_by_class_name('sp-row'):
+            resultData = row.find_element_by_class_name('data-time')
+            resultDataSoup = makeSoup(resultData)
 
-                link = resultDataSoup.find('a').get('href')
-                urls.append(link)
-            if buttonExists:         
-                actionChains.perform() #Go to next page
-        tableNumber = tableNumber + 1
+            link = resultDataSoup.find('a').get('href')
+            urls.append(link)
+        if buttonExists:         
+            actionChains.perform() #Go to next page
+    tableNumber = tableNumber + 1
 #        leagues.append(urls)
-        for url in urls:
-            getMatchData(url, league, seasonSoup.text)
-        urls = []
-        print(league + ' has been processed')
-    print(seasonSoup.text + ' has been processed')
-    #go into seperate function passing in leagues that 
+    for url in urls:
+        getMatchData(url, league, seasonSoup.text)
+    urls = []
+    print(league + ' has been processed')
+print(seasonSoup.text + ' has been processed')
+#go into seperate function passing in leagues that 
 
 driver.close()
 print('Done!')
